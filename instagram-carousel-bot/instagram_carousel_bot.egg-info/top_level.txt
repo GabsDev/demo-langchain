@@ -1,0 +1,3 @@
+bot
+mcp_servers
+ui

@@ -1,0 +1,12 @@
+Tema 3 - Cummunity - RAG/credentials.json
+Tema 3 - Cummunity - RAG/token.json
+Tema 6 - Agents/credentials.json
+Tema 6 - Agents/token.json
+Tema 6 - Agents/soc_multiagent/.env
+
+# Instagram carousel bot
+instagram-carousel-bot/.env
+instagram-carousel-bot/temp/
+instagram-carousel-bot/__pycache__/
+**/__pycache__/
+*.pyc

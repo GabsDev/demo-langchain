@@ -1,0 +1,26 @@
+[project]
+name = "instagram-carousel-bot"
+version = "0.1.0"
+description = "LangChain bot that generates Instagram carousels from WhatsApp messages using AI"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.3.26",
+    "langchain-openai>=0.3.0",
+    "langchain-mcp-adapters>=0.3.0",
+    "langgraph>=0.4.0",
+    "mcp>=1.9.0,<2",
+    "flask>=3.0.0",
+    "twilio>=9.0.0",
+    "google-genai>=1.52.0",
+    "streamlit>=1.40.0",
+    "python-dotenv>=1.1.0",
+    "Pillow>=11.0.0",
+    "tenacity>=9.0.0",
+    "structlog>=25.0.0",
+    "requests>=2.32.0",
+    "pydantic>=2.10.0",
+    "streamlit-autorefresh>=1.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["bot*", "mcp_servers*", "ui*"]
