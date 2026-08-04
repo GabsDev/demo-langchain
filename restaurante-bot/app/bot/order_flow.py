@@ -67,7 +67,7 @@ GREETING_RE = re.compile(
 )
 # Shown alongside every step prompt so users always know they can modify the order.
 HINT_MODIFY = (
-    "\n💡 Podés modificar tu pedido: \"agregame una coca\", "
+    "\n\n💡 Podés modificar tu pedido: \"agregame una coca\", "
     "\"sáqueme el gallo pinto\" o \"cambie la milanesa por el asado\"."
 )
 # Shown in the greeting so first-time users know how to talk to the bot.
@@ -371,10 +371,10 @@ def _build_order_summary(flow: FlowState) -> tuple[list[str], float]:
         total += subtotal
         lines.append(f"• {item.quantity} × {item.canonical_name} — {canonical.format_price(subtotal)}")
     lines.append("")
-    lines.append(f"TOTAL: {canonical.format_price(total)}")
+    lines.append(f"💵 TOTAL: {canonical.format_price(total)}")
     if flow.delivery_type is not None:
-        lines.append(f"Entrega: {flow.delivery_type.label}")
-    lines.append(f"A nombre de: {flow.customer_name or 'Cliente'}")
+        lines.append(f"🛵 Entrega: {flow.delivery_type.label}")
+    lines.append(f"👤 A nombre de: {flow.customer_name or 'Cliente'}")
     if flow.delivery_type == DeliveryType.delivery:
         if flow.delivery_phone:
             lines.append(f"📞 Teléfono: {flow.delivery_phone}")
@@ -416,8 +416,8 @@ async def send_menu_pdf(update: Update, user_id: int) -> None:
     """Reply to an explicit 'send me the menu' request with sections + PDF."""
     menu = canonical.load_or_empty(config.MENU_PATH)
     if menu.items:
-        sections = " • ".join(section.name for section in menu.sections if section.items)
-        await _reply(update, f"📋 {menu.restaurant_name} — Secciones:\n{sections}")
+        sections = "\n• ".join(section.name for section in menu.sections if section.items)
+        await _reply(update, f"📋 {menu.restaurant_name} — Secciones:\n\n• {sections}")
     sent = await send_menu_document_only(update)
     if not sent:
         logger.warning(
@@ -437,7 +437,7 @@ async def begin_order(user_id: int, chat_id: int, update: Update, context: Conte
     logger.info("Order flow session started for user %s", user_id)
     await _reply(
         update,
-        "¡Dale! Contame qué querés pedir 🍽️\n"
+        "¡Dale! Contame qué querés pedir 🍽️\n\n"
         "Ej.: \"dos milanesas napolitanas y una coca cola\" o \"2x gallo pinto\"",
     )
 
@@ -597,9 +597,9 @@ async def parse_and_continue(
         if suggestions:
             await _reply(
                 update,
-                "Quizás quisiste decir:\n" + "\n".join(f"• {name}" for name in suggestions),
+                "Quizás quisiste decir:\n\n" + "\n".join(f"• {name}" for name in suggestions),
             )
-        await _reply(update, "Escribime tu pedido de nuevo, o usá /start para ver el menú.")
+        await _reply(update, "✏️ Escribime tu pedido de nuevo, o usá /start para ver el menú.")
         return
     if not parsed.items:
         logger.info("Could not understand order text from user %s", user_id)
@@ -617,7 +617,7 @@ async def parse_and_continue(
 
     await _reply(
         update,
-        "¿A nombre de quién hago el pedido? "
+        "👤 ¿A nombre de quién hago el pedido?\n\n"
         "Podés escribir tu nombre o decir \"omitir\" para usar \"Cliente\"."
         + HINT_MODIFY,
     )
@@ -743,7 +743,7 @@ async def modify_order(
         "Order modified for user %s: %s",
         user_id, ", ".join(changes),
     )
-    summary_lines = ["Listo 👇"]
+    summary_lines = ["Listo 👇", ""]
     summary_lines.extend(f"• {change}" for change in changes)
     await _reply(update, "\n".join(summary_lines))
 
@@ -806,21 +806,25 @@ async def confirm_order(
 
     delivery_label = "Delivery" if order.delivery_type == DeliveryType.delivery else "Pickup"
     lines = [
-        f"🎉 ¡Pedido confirmado!\n\n",
-        f"🧾 ORDEN N° {order.number}\n",
+        "🎉 ¡Pedido confirmado!",
+        "",
+        f"🧾 ORDEN N° {order.number}",
+        "",
     ]
     for item in order.items:
         lines.append(f"• {item.quantity} × {item.name} — {canonical.format_price(item.total)}")
     lines.append("")
-    lines.append(f"TOTAL: {canonical.format_price(order.total)}")
-    lines.append(f"Entrega: {delivery_label}")
-    lines.append(f"A nombre de: {order.customer_name or 'Cliente'}")
+    lines.append(f"💵 TOTAL: {canonical.format_price(order.total)}")
+    lines.append("")
+    lines.append(f"🛵 Entrega: {delivery_label}")
+    lines.append(f"👤 A nombre de: {order.customer_name or 'Cliente'}")
     if order.delivery_type == DeliveryType.delivery:
         if order.delivery_phone:
-            lines.append(f"📞 {order.delivery_phone}")
+            lines.append(f"📞 Teléfono: {order.delivery_phone}")
         if order.delivery_address:
-            lines.append(f"📍 {order.delivery_address}")
-    lines.append("\nEstado: ⏳ Pendiente. Te avisamos cuando esté en preparación.")
+            lines.append(f"📍 Dirección: {order.delivery_address}")
+    lines.append("")
+    lines.append("⏳ Estado: Pendiente. Te avisamos cuando esté en preparación. 😊")
     await _reply(update, "\n".join(lines))
 
 
@@ -861,12 +865,12 @@ async def notify_order_status(order: Order) -> None:
         )
         return
     text = (
-        f"🔔 Actualización de tu pedido N° {order.number} "
-        f"(a nombre de {order.customer_name or 'Cliente'})\n"
-        f"Estado: {order.status.label}"
+        f"🔔 Actualización de tu pedido N° {order.number}\n"
+        f"(a nombre de {order.customer_name or 'Cliente'})\n\n"
+        f"⏳ Estado: {order.status.label}"
     )
     if order.status.value == "completed":
-        text += "\n¡Que lo disfrutes! 😋"
+        text += "\n\n🎉 ¡Que lo disfrutes! 😋"
     try:
         await application.bot.send_message(chat_id=chat_id, text=text)
         logger.info(
@@ -939,7 +943,7 @@ async def handle_menu_pdf_document(
             for item in parsed.items[:3]
         )
         summary = (
-            f"Encontré {sections} secciones y {items} ítems (ej. {examples}).\n"
+            f"Encontré {sections} secciones y {items} ítems (ej. {examples}).\n\n"
             "¿Reemplazo todo el menú actual?"
         )
         if not used_llm:
@@ -955,7 +959,7 @@ async def handle_menu_pdf_document(
         )
         await _reply(update, summary)
         await update.effective_chat.send_message(
-            "¿Reemplazo el menú completo?", reply_markup=keyboard
+            "¿Reemplazo el menú completo? 📄", reply_markup=keyboard
         )
         logger.info("Menu PDF upload finished for user %s", user_id)
     except Exception:
