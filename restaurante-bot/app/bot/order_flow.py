@@ -69,6 +69,17 @@ HINT_MODIFY = (
     "\n💡 Podés modificar tu pedido: \"agregame una coca\", "
     "\"sáqueme el gallo pinto\" o \"cambie la milanesa por el asado\"."
 )
+# Shown in the greeting so first-time users know how to talk to the bot.
+WELCOME_HINTS = (
+    "\n\n📋 Hacer un pedido\n"
+    "   Contame qué querés con palabras simples, por ejemplo:\n"
+    "   • \"me regala un casado\"\n"
+    "   • \"quiero un casado y un fresco\"\n"
+    "   • \"2x gallo pinto\" o \"casado x 2\" para cantidades\n\n"
+    "📋 Ver el menú: escribime \"mandame el menú\"\n"
+    "✏️ Ya pediste y querés cambiar: \"agregame una coca\" o "
+    "\"sáqueme el gallo pinto\""
+)
 MODIFY_KEYWORDS = re.compile(
     r"\b(agreg[aá]|agregame|agr[eé]gale|sac[aá]|s[aá]came|quita|quit[aá]|"
     r"quitame|elimina|elimin[aá]|borra|borr[aá]|cambi[aá]|cambio|cambiar|"
@@ -319,7 +330,10 @@ def greeting_reply(text: str) -> str | None:
         greeting = "¡Buenas tardes!"
     else:
         greeting = "¡Buenas noches!"
-    return f"{greeting} ¿En qué te ayudo? Podés pedir comida o preguntar por el menú 😊"
+    return (
+        f"{greeting} ¿En qué te ayudo? Podés pedir comida o preguntar por el menú 😊"
+        f"{WELCOME_HINTS}"
+    )
 
 
 def normalize_phone(text: str) -> str | None:

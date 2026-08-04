@@ -90,7 +90,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     order_flow.reset(user_id)
     await update.message.reply_text(
-        "¡Hola! 👋 Soy el asistente de la cocina. Elegí una opción:",
+        "¡Hola! 👋 Soy el asistente de la cocina. Elegí una opción:"
+        + order_flow.WELCOME_HINTS,
         reply_markup=_start_keyboard(),
     )
 
