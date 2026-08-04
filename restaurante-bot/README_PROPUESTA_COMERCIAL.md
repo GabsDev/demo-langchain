@@ -30,7 +30,7 @@ El cliente escribe como le habla a un mesero: *"un casado de pollo y un fresco d
 | **Menos errores** | El pedido llega escrito y legible a la cocina, con precios verificados contra el menú. |
 | **Menos carga telefónica** | El personal se enfoca en atender clientes presentes en lugar de contestar el teléfono. |
 | **Menú siempre al día** | Cambios de precios y platos se actualizan en segundos, sin reimprimir. |
-| **Costo operativo mínimo** | Menos de ₡500 al mes en servicios de IA para un restaurante pequeño. |
+| **Costo operativo mínimo** | ~US$1–3 al mes en servicios de IA para un restaurante pequeño. |
 | **Sin infraestructura propia** | No necesita servidores ni personal técnico; el sistema ya viene montado. |
 
 ---
@@ -112,7 +112,7 @@ Cliente en Telegram        IA (GPT-4o-mini + menú RAG)        Cocina (panel KDS
 | **Pro** | Restaurantes medianos | Todo lo del Básico + consultas IA al menú (RAG), carga de menú por PDF, historial y búsqueda | **₡35,000/mes** (~US$70) | ₡45,000/mes (~US$90) |
 | **Premium** | Cadenas y alta demanda | Todo lo del Pro + personalización, múltiples paneles, soporte prioritario y ajustes a medida | **₡59,000/mes** (~US$118) | ₡75,000/mes (~US$150) |
 
-> Costos de IA incluidos en el plan (menos de ₡500/mes en consumo para un restaurante pequeño).
+> Costos de IA incluidos en el plan (~US$1–3/mes, menos de ₡1,500, para un restaurante pequeño).
 > Precios sujetos a cambios según tipo de cambio. Después de los primeros 6 meses aplica el
 > precio regular.
 
@@ -218,9 +218,89 @@ un restaurante pequeño.
 
 ---
 
-## 9. Contacto
+## 9. Proceso de contratación (próximos pasos)
+
+1. **Demo en vivo (hoy mismo)**: agendamos 20–30 minutos y le mostramos el bot con un menú de ejemplo tico. Sin compromiso.
+2. **Prueba con su menú real (7 días)**: cargamos su carta y dejamos el bot corriendo con sus platos y precios para que lo pruebe su equipo.
+3. **Aprobación y contrato**: usted aprueba la propuesta y firmamos un contrato simple de servicio.
+4. **Pago del setup**: ₡99,000 — se factura el 50% al iniciar la instalación y el 50% al entregar el bot funcionando (factura electrónica de Hacienda incluida).
+5. **Implementación (3–5 días hábiles)**: desplegamos el sistema, configuramos el menú, capacitamos al equipo (~1 hora) y queda en producción.
+
+## 10. Términos y condiciones
+
+- **Permanencia mínima**: 6 meses desde la activación (aplica el precio de introducción durante ese período). Después de los 6 meses pasa al precio regular, con aviso 30 días antes.
+- **Forma de pago de la suscripción**: mensualidad por adelantado, mediante SINPE Móvil o transferencia. Primer mes se cobra al activar el servicio.
+- **Cancelación**: después de la permanencia mínima, puede cancelar con 30 días de aviso. El servicio se desactiva al final del período ya pagado.
+- **Alcance del setup (₡99,000)**: instalación en la nube, configuración del bot y del panel KDS, carga del menú (hasta 1 revisión), 1 hora de capacitación y puesta en producción (3–5 días hábiles).
+- **Cambios de menú posteriores**: gratuitos y en autoservicio desde el panel en todos los planes; en Premium se incluyen hasta 2 ajustes asistidos por mes.
+- **Trabajo adicional**: horas de implementación o personalización fuera del alcance se cotizan a ₡15,000–20,000/hora o como mini-proyecto.
+- **Garantía**: 15 días de garantía de funcionamiento desde la activación; fallas imputables al proveedor se corrigen sin costo.
+- **Datos**: el historial de pedidos pertenece al restaurante. Al cancelar, se entrega una exportación (CSV/JSON) a solicitud.
+- **Disponibilidad**: hosting 24/7 incluido. Incidentes del proveedor se atienden con prioridad; el panel y el bot vuelven a operar al restablecerse el servicio.
+
+## 11. Contacto
+
+**¿Listo para agendar su demo gratuita?**
+
+La demostración toma 20 minutos, no requiere compromiso y se hace con un menú de ejemplo tico. Si su restaurante ya tiene su carta, se la probamos con sus propios platos.
 
 [Su nombre / empresa]
 [Teléfono / WhatsApp — +506 ...]
 [Correo]
 [Sitio web]
+
+---
+
+## 12. Plan de primeros clientes (USO INTERNO — no enviar al cliente)
+
+> Esta sección es material de ventas para el proveedor. Elimínala (o mantenla
+> aparte) antes de enviar el documento a un restaurante.
+
+### El elefante en la sala: WhatsApp vs Telegram
+
+En Costa Rica los clientes piden por WhatsApp, no por Telegram. El dueño no va a
+entender "es un bot de Telegram"; va a pensar "¿y por qué no WhatsApp?".
+
+- **Vender el valor, no la tecnología**: "sus clientes escriben como le hablan a
+  un mesero y el pedido llega directo a la cocina, sin comisiones del 25%".
+- **Acelerar WhatsApp antes de vender en serio**: para el primer cliente real,
+  la integración de WhatsApp deja de ser "futuro" y pasa a ser el precio de
+  entrada al mercado. Usar Telegram para la demo es suficiente.
+
+### Los 5 movimientos (en orden)
+
+1. **Primero el círculo cercano, no el frío.** Tu primer cliente sale de alguien
+   que te conoce: el tío de la soda, el amigo con negocio de comida. Ofrecé a los
+   primeros 2–3 el setup GRATIS o al 50% a cambio de testimonio y caso de
+   referencia. Es la forma más barata de comprar credibilidad.
+
+2. **La demo con SU menú, no con el de ejemplo.** Cargá la carta real del
+   restaurante, mostrá el pedido llegando al panel KDS en vivo. Eso vende solo.
+   La demo con menú tico de ejemplo es para el primer acercamiento; la de SU
+   carta es para el cierre.
+
+3. **Vendé la pérdida, no el bot.** Comisiones del 20–30% de UberEats/Rappi:
+   "si recibe 10 pedidos delivery por día a ₡6,000 promedio, paga
+   ~₡400,000–500,000 al mes en comisiones. El bot cuesta ₡35,000 y esos pedidos
+   van directo." El dueño no compra "un bot con IA", compra no regalarle el 25%
+   a la app.
+
+4. **Un nicho, no "todos los restaurantes".** Elegí UN segmento para los
+   primeros 3: sodas y comedores, pizzerías de barrio, o food trucks. Un nicho
+   afina el pitch y genera referencias entre pares. Un restaurante de mantel
+   largo pedirá cosas que no tenés (reservas, multi-mesas).
+
+5. **Comisiones por referidos.** Ofrecé ₡10,000–15,000 por cada cliente referido
+   que firme. Los dueños de restaurantes se conocen entre ellos.
+
+### Plan de 30 días
+
+| Semana | Acción |
+|---|---|
+| 1 | Lista de 20 conocidos con negocios de comida o que conozcan dueños. Elegir nicho. |
+| 2 | Oferta fundador a 3 (setup 50%, testimonio a cambio). Cerrar el primero. |
+| 3 | Demo con el menú real del primero, ponerlo en producción (ver `specs/deploy.md`). |
+| 4 | Pedir testimonio y el primer referido. Repetir con los siguientes 2. |
+
+**El embudo real:** 20 contactos → 5 conversaciones → 2 demos → 1 cliente.
+Con el primero, el segundo y el tercero son más fáciles porque ya hay un caso real.
