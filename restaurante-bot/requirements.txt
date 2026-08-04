@@ -1,0 +1,15 @@
+langchain>=0.3
+langchain-openai>=0.3
+langchain-chroma>=0.1
+chromadb>=0.5
+openai>=1.40
+python-telegram-bot>=21.6
+fastapi>=0.115
+python-multipart>=0.0.9
+uvicorn[standard]>=0.30
+pydantic>=2.7
+python-dotenv>=1.0
+pdfplumber>=0.11
+requests>=2.32
+beautifulsoup4>=4.12
+reportlab>=4.0

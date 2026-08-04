@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KDS — Restaurante</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🍳 KDS — Cocina</div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-view="orders">Pedidos</button>
+      <button class="tab" data-view="history">Historial</button>
+      <button class="tab" data-view="menu">Menú</button>
+    </nav>
+    <div class="clock" id="clock"></div>
+    <div class="counts">
+      <span class="pill amber" id="count-pending">Pendientes: 0</span>
+      <span class="pill red" id="count-preparing">En preparación: 0</span>
+    </div>
+  </header>
+
+  <section class="view" id="view-orders">
+    <main class="grid" id="orders"></main>
+    <div class="empty" id="empty">Sin pedidos por ahora. ¡Relax! 😌</div>
+  </section>
+
+  <section class="view hidden" id="view-history">
+    <div class="toolbar history-toolbar">
+      <div class="history-controls">
+        <input type="date" id="history-date" title="Día a consultar" />
+        <input type="text" id="history-q" placeholder="Buscar por número, cliente o ítem…" />
+        <select id="history-status" title="Filtrar por estado">
+          <option value="">Todos</option>
+          <option value="pending">Pendiente</option>
+          <option value="preparing">En preparación</option>
+          <option value="completed">Completada</option>
+        </select>
+        <button class="btn primary" id="history-search">Buscar</button>
+      </div>
+      <div class="history-actions">
+        <button class="btn danger" id="history-clear-day">Borrar pedidos del día</button>
+        <button class="btn primary" id="history-refresh">Actualizar historial</button>
+      </div>
+    </div>
+    <div class="history-counter" id="history-counter"></div>
+    <div class="history-clear-msg" id="history-clear-msg"></div>
+    <div class="empty hidden" id="history-empty">No hay pedidos para este día.</div>
+    <div class="history-list" id="history-list"></div>
+  </section>
+
+  <section class="view hidden" id="view-menu">
+    <div class="toolbar">
+      <span class="hint">Después de cambios grandes en el menú, reconstruí el índice RAG con el botón.</span>
+      <div class="menu-toolbar-actions">
+        <button class="btn primary" id="menu-rebuild">Reconstruir índice RAG</button>
+        <button class="btn primary" id="menu-refresh">Actualizar menú</button>
+      </div>
+    </div>
+    <div class="menu-rebuild-status" id="menu-rebuild-status"></div>
+    <div class="menu-pdf-upload">
+      <input type="file" id="menu-pdf-input" accept="application/pdf,.pdf" />
+      <button class="btn primary" id="menu-pdf-upload">Subir PDF del menú</button>
+    </div>
+    <div class="menu-pdf-status" id="menu-pdf-status"></div>
+    <div class="menu-root" id="menu-root"></div>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

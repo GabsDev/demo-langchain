@@ -10,3 +10,13 @@ instagram-carousel-bot/temp/
 instagram-carousel-bot/__pycache__/
 **/__pycache__/
 *.pyc
+
+# Credenciales de sesión (LinkedIn scraping) — NUNCA subir
+cookies.pkl
+perfil_brave/
+
+# Restaurante bot (ya tiene su propio .gitignore, doble red de seguridad)
+restaurante-bot/.env
+
+# Estado local del agente
+.atl/
