@@ -35,6 +35,8 @@ def build_application() -> Application:
     application = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", cmd_start))
+    application.add_handler(CommandHandler("ayuda", cmd_help))
+    application.add_handler(CommandHandler("help", cmd_help))
     application.add_handler(MessageHandler(filters.Document.ALL, on_document))
     application.add_handler(CallbackQueryHandler(on_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
@@ -91,6 +93,29 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "¡Hola! 👋 Soy el asistente de la cocina. Elegí una opción:",
         reply_markup=_start_keyboard(),
     )
+
+
+async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show usage instructions without resetting an order in progress."""
+    _log_update(update)
+    text = (
+        "🤖 ¡Acá va la guía rápida!\n\n"
+        "📋 Ver el menú\n"
+        "   Tocá el botón \"Ver menú\" o escribime \"mandame el menú\".\n\n"
+        "🍽️ Hacer un pedido\n"
+        "   Contame qué querés con palabras simples. Ejemplos:\n"
+        "   • \"me regala un casado\"\n"
+        "   • \"quiero un casado y un fresco\"\n"
+        "   • \"2x gallo pinto\" o \"casado x 2\" para cantidades\n\n"
+        "✏️ Modificar un pedido en curso\n"
+        "   • \"agregame una coca\"\n"
+        "   • \"sáqueme el gallo pinto\"\n"
+        "   • \"cambie la milanesa por el asado\"\n\n"
+        "❌ Cancelar\n"
+        "   Escribí \"cancelar\" o tocá el botón Cancelar cuando te pregunten.\n\n"
+        "Elegí una opción con el teclado de abajo 👇"
+    )
+    await update.message.reply_text(text, reply_markup=_start_keyboard())
 
 
 async def _send_menu(update: Update) -> None:

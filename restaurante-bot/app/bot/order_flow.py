@@ -27,14 +27,27 @@ from app.orders import store
 logger = logging.getLogger(__name__)
 
 ORDER_KEYWORDS = re.compile(
-    r"\b(quiero|quiero pedir|querría|necesito|dame|traeme|pedir|pedido|pido|"
-    r"para llevar|para la casa|delivery|retiro|pickup)\b",
+    r"\b(quiero|quiero pedir|querría|necesito|dame|deme|traeme|pedir|pedido|pido|"
+    r"regal\w*|para llevar|para la casa|delivery|retiro|pickup)\b",
     re.IGNORECASE,
 )
 QUANTITY_PATTERN = re.compile(
     r"\b(\d+|una|un|dos|tres|cuatro|cinco|media|un par)\b",
     re.IGNORECASE,
 )
+QUANTITY_X_AFTER = re.compile(r"(\d+)\s*[xX]\s*")
+QUANTITY_X_BEFORE = re.compile(r"\s*[xX]\s*(\d+)")
+
+
+def normalize_quantity_x(text: str) -> str:
+    """Rewrite quantity 'x'/'X' as the word 'por' (Costa Rican shorthand).
+
+    '2x gallo pinto' -> '2 por gallo pinto'; 'casado x 2' -> 'casado por 2'.
+    Only touches 'x' adjacent to digits; other uses (caxa, xq) are left alone.
+    """
+    text = QUANTITY_X_AFTER.sub(r"\1 por ", text)
+    text = QUANTITY_X_BEFORE.sub(r" por \1", text)
+    return text
 MENU_WORD_RE = re.compile(r"\b(men[uú]|carta)\b", re.IGNORECASE)
 MENU_PDF_TRIGGERS = (
     "pdf", "mandame", "mándame", "mandáme", "enviame", "envíame",
@@ -100,7 +113,11 @@ ORDER_PARSE_PROMPT = ChatPromptTemplate.from_messages(
             "Sos un extractor de pedidos de restaurante. Te dan el menú canónico y "
             "el texto informal de un cliente. Devolvé el pedido usando SOLO los "
             "nombres canónicos exactos del menú, con su cantidad. Si parte del texto "
-            "no coincide con ningún plato, ponelo en `unmatched`. No inventes platos.",
+            "no coincide con ningún plato, ponelo en `unmatched`. No inventes platos. "
+            "En Costa Rica frases como \"me regala un X\", \"regalame un X\", "
+            "\"me da un X\" o \"deme un X\" son pedidos: interpretalas como un "
+            "pedido del plato X y mapeá X al nombre canónico exacto del menú. "
+            "Si X no coincide con ningún nombre canónico, ponelo en `unmatched`.",
         ),
         (
             "human",
@@ -116,6 +133,8 @@ INTENT_PROMPT = ChatPromptTemplate.from_messages(
             "Clasificá la intención del mensaje de un cliente de restaurante. "
             "`order` = quiere pedir comida o bebida. `menu_question` = pregunta "
             "sobre el menú o el restaurante. `other` = cualquier otra cosa. "
+            "En Costa Rica \"me regala un plato\" o \"deme un plato\" son formas "
+            "de pedir: clasificalas como `order`. "
             "Respondé solo con la intención.",
         ),
         ("human", "Mensaje: {text}"),
@@ -217,6 +236,7 @@ def classify_intent(text: str) -> str:
 # --------------------------------------------------------------------------
 def parse_order(text: str, menu: canonical.Menu) -> ParsedOrder:
     """Extract ordered items from colloquial Spanish using GPT-4o-mini."""
+    text = normalize_quantity_x(text)
     config.require_openai_key()
     logger.info("Parsing order text (truncated): %.200s", text)
     llm = ChatOpenAI(model=config.OPENAI_MODEL, temperature=0)
@@ -418,7 +438,8 @@ async def handle_text(
         await _reply(update, "¡Dale! Adjuntame el archivo PDF con el menú y lo reemplazo 📄")
         return
 
-    if flow.step in ("awaiting_name", "awaiting_delivery", "awaiting_confirm") and MODIFY_KEYWORDS.search(text):
+    has_pending_order = flow.parsed is not None and bool(flow.parsed.items)
+    if flow.step in ("awaiting_name", "awaiting_delivery", "awaiting_confirm"):
         logger.info("Order modification intent from user %s", user_id)
         await modify_order(update, context, user_id, chat_id, text)
         return
@@ -585,6 +606,7 @@ def parse_modification(
     text: str, menu: canonical.Menu, current_parsed: ParsedOrder
 ) -> OrderModification:
     """Extract add/remove changes from colloquial Spanish using GPT-4o-mini."""
+    text = normalize_quantity_x(text)
     config.require_openai_key()
     logger.info("Parsing order modification text (truncated): %.200s", text)
     llm = ChatOpenAI(model=config.OPENAI_MODEL, temperature=0)

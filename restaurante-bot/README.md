@@ -231,6 +231,32 @@ secreto lo enmascara con `config.redact()`.
 - `specs/` — todos los specs del proyecto (producción, decisiones, etc.); ver
   [`specs/README.md`](specs/README.md) para el índice y la convención.
 
+### Concurrencia: ¿cuántas conversaciones en paralelo?
+
+**Estado:** ilimitado en memoria. Cada chat tiene su propia máquina de estados
+(`_flows: dict[int, FlowState]` en `order_flow.py`), así que el bot *mantiene*
+tantas conversaciones simultáneas como chats le escriban, sin límite duro.
+
+**Procesamiento: secuencial, NO paralelo (hoy).** El bot atiende **un mensaje
+por vez** y los demás hacen fila:
+
+| Componente | Cómo está hoy | Efecto |
+|---|---|---|
+| PTB `Application` | `build()` sin `concurrent_updates=True` (`telegram_bot.py:35`) | 1 update a la vez |
+| Llamadas al LLM | síncronas `.invoke()` (`order_flow.py:202, 223, 594`) | bloquean el event loop mientras GPT responde |
+| Proceso | 1 proceso, 1 event loop (`run.py`) | todo comparte la misma cola |
+
+**Estimación práctica:** cada llamada a GPT-4o-mini toma ~1–3 s y un pedido
+típico usa 1–3 llamadas (intención + parseo + a veces modificación). Si 5
+clientes escriben en el mismo momento, el 5° espera ~5–15 s. Para un
+restaurante pequeño (1–3 pedidos simultáneos) es imperceptible; con picos de
+10+ mensajes simultáneos el tiempo de respuesta se nota.
+
+**Si hace falta paralelismo real** (campañas, WhatsApp, más volumen): usar
+`concurrent_updates=True` + cambiar `.invoke()` por `.ainvoke()` (las
+llamadas al LLM ya no bloquearían el loop) y, en el límite, escalar a
+múltiples workers o webhook. Ver `specs/deploy.md` para el roadmap.
+
 ## Roadmap: migración a WhatsApp
 
 **Decisión (confirmada): Meta Cloud API directa** (no Twilio ni BSP). Twilio pasa las
