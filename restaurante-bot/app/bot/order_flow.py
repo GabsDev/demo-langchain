@@ -64,6 +64,11 @@ GREETING_RE = re.compile(
     r"\b(buenos d[ií]as|buen d[ií]a|buenas tardes|buenas noches|buenas|hola|holi|buenass?)\b",
     re.IGNORECASE,
 )
+# Shown alongside every step prompt so users always know they can modify the order.
+HINT_MODIFY = (
+    "\n💡 Podés modificar tu pedido: \"agregame una coca\", "
+    "\"sáqueme el gallo pinto\" o \"cambie la milanesa por el asado\"."
+)
 MODIFY_KEYWORDS = re.compile(
     r"\b(agreg[aá]|agregame|agr[eé]gale|sac[aá]|s[aá]came|quita|quit[aá]|"
     r"quitame|elimina|elimin[aá]|borra|borr[aá]|cambi[aá]|cambio|cambiar|"
@@ -401,7 +406,12 @@ async def begin_order(user_id: int, chat_id: int, update: Update, context: Conte
     flow.step = "awaiting_order"
     flow.chat_id = chat_id
     logger.info("Order flow session started for user %s", user_id)
-    await _reply(update, "¡Dale! Contame qué querés pedir 🍽️\nEj.: \"dos milanesas napolitanas y una coca cola\"")
+    await _reply(
+        update,
+        "¡Dale! Contame qué querés pedir 🍽️\n"
+        "Ej.: \"dos milanesas napolitanas y una coca cola\" o \"2x gallo pinto\"",
+    )
+
 
 
 async def begin_question(user_id: int, update: Update) -> None:
@@ -452,7 +462,7 @@ async def handle_text(
         flow.delivery_phone = phone
         flow.step = "awaiting_address"
         logger.info("Delivery phone set for user %s", user_id)
-        await _reply(update, "📍 ¿Y la dirección de entrega?")
+        await _reply(update, "📍 ¿Y la dirección de entrega?" + HINT_MODIFY)
         return
 
     if flow.step == "awaiting_address":
@@ -462,7 +472,7 @@ async def handle_text(
         lines, _ = _build_order_summary(flow)
         await _reply(update, "\n".join(lines))
         await update.effective_chat.send_message(
-            "¿Confirmás el pedido?", reply_markup=_confirm_keyboard()
+            "¿Confirmás el pedido?" + HINT_MODIFY, reply_markup=_confirm_keyboard()
         )
         return
 
@@ -471,7 +481,7 @@ async def handle_text(
         flow.step = "awaiting_delivery"
         logger.info("Customer name set for user %s: %r", user_id, flow.customer_name)
         await update.effective_chat.send_message(
-            "¿Cómo lo querés recibir?", reply_markup=_delivery_keyboard()
+            "¿Cómo lo querés recibir?" + HINT_MODIFY, reply_markup=_delivery_keyboard()
         )
         return
 
@@ -482,7 +492,7 @@ async def handle_text(
         elif any(k in lowered for k in ("pickup", "retiro", "local", "llevar", "take away", "takeaway", "pasar")):
             await choose_delivery(update, context, user_id, chat_id, "pickup")
         else:
-            await _reply(update, "¿Cómo lo querés? Elegí Delivery o Pickup 👇")
+            await _reply(update, "¿Cómo lo querés? Elegí Delivery o Pickup 👇" + HINT_MODIFY)
         return
 
     if flow.step == "awaiting_confirm":
@@ -495,7 +505,7 @@ async def handle_text(
             reset(user_id)
             await _reply(update, "Quedó cancelado 👌 ¿Necesitás algo más?")
         else:
-            await _reply(update, "¿Confirmás el pedido? Respondé Sí o Cancelar.")
+            await _reply(update, "¿Confirmás el pedido? Respondé Sí o Cancelar." + HINT_MODIFY)
         return
 
     if flow.step == "awaiting_question":
@@ -572,7 +582,8 @@ async def parse_and_continue(
     await _reply(
         update,
         "¿A nombre de quién hago el pedido? "
-        "Podés escribir tu nombre o decir \"omitir\" para usar \"Cliente\".",
+        "Podés escribir tu nombre o decir \"omitir\" para usar \"Cliente\"."
+        + HINT_MODIFY,
     )
 
 
@@ -591,14 +602,14 @@ async def choose_delivery(
 
     if flow.delivery_type == DeliveryType.delivery:
         flow.step = "awaiting_phone"
-        await _reply(update, "📞 Para el delivery, ¿me pasás un teléfono de contacto?")
+        await _reply(update, "📞 Para el delivery, ¿me pasás un teléfono de contacto?" + HINT_MODIFY)
         return
 
     flow.step = "awaiting_confirm"
     lines, _ = _build_order_summary(flow)
     await _reply(update, "\n".join(lines))
     await update.effective_chat.send_message(
-        "¿Confirmás el pedido?", reply_markup=_confirm_keyboard()
+        "¿Confirmás el pedido?" + HINT_MODIFY, reply_markup=_confirm_keyboard()
     )
 
 
@@ -710,12 +721,12 @@ async def modify_order(
     await _reply(update, "\n".join(lines))
     if flow.delivery_type is not None:
         await update.effective_chat.send_message(
-            "¿Confirmás el pedido?", reply_markup=_confirm_keyboard()
+            "¿Confirmás el pedido?" + HINT_MODIFY, reply_markup=_confirm_keyboard()
         )
         flow.step = "awaiting_confirm"
     else:
         await update.effective_chat.send_message(
-            "¿Cómo lo querés recibir?", reply_markup=_delivery_keyboard()
+            "¿Cómo lo querés recibir?" + HINT_MODIFY, reply_markup=_delivery_keyboard()
         )
         flow.step = "awaiting_delivery"
 
