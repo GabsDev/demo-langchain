@@ -306,16 +306,26 @@ function ensureAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  if (audioCtx.state === 'suspended') {
-    // Called from a user gesture (click/keypress), so this succeeds.
-    audioCtx.resume();
-  }
   return audioCtx;
 }
 
-// Chrome/Edge unlock audio on the first user gesture anywhere in the page.
-document.addEventListener('click', ensureAudio, { once: true });
-document.addEventListener('keydown', ensureAudio, { once: true });
+let pendingChime = false;
+
+// Chrome/Edge only allow audio after a user gesture. Any click/keydown
+// resumes the context; if an order arrived while locked, play it then.
+function unlockAudio() {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {}).then(() => {
+      if (pendingChime) {
+        pendingChime = false;
+        playChimeNow();
+      }
+    });
+  }
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
 
 function playTone(ctx, freq, start, duration, volume) {
   const osc = ctx.createOscillator();
@@ -337,19 +347,29 @@ function playTone(ctx, freq, start, duration, volume) {
 const CHIME_REPEATS = 3;
 const CHIME_REPEAT_GAP = 1.2; // seconds between repetitions
 
+function playChimeNow() {
+  const ctx = audioCtx;
+  if (!ctx) return;
+  const now = ctx.currentTime + 0.05;
+  for (let i = 0; i < CHIME_REPEATS; i++) {
+    const t = now + i * CHIME_REPEAT_GAP;
+    playTone(ctx, 1318.5, t, 0.35, 0.25);          // E6
+    playTone(ctx, 2637.0, t, 0.22, 0.08);          // harmonic
+    playTone(ctx, 880.0, t + 0.3, 0.5, 0.18);      // A5 body
+    playTone(ctx, 1760.0, t + 0.3, 0.3, 0.07);     // harmonic
+  }
+}
+
 function newOrderChime() {
   if (!soundEnabled) return;
   try {
     const ctx = ensureAudio();
-    if (!ctx) return;
-    const now = ctx.currentTime + 0.05;
-    for (let i = 0; i < CHIME_REPEATS; i++) {
-      const t = now + i * CHIME_REPEAT_GAP;
-      playTone(ctx, 1318.5, t, 0.35, 0.25);          // E6
-      playTone(ctx, 2637.0, t, 0.22, 0.08);          // harmonic
-      playTone(ctx, 880.0, t + 0.3, 0.5, 0.18);      // A5 body
-      playTone(ctx, 1760.0, t + 0.3, 0.3, 0.07);     // harmonic
+    if (ctx.state === 'suspended') {
+      // Audio locked until the user interacts: defer and play once unlocked.
+      pendingChime = true;
+      return;
     }
+    playChimeNow();
   } catch (e) {
     // Audio is not available: ignore.
   }
