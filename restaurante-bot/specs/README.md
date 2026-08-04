@@ -8,7 +8,7 @@
 
 | Archivo | Contenido | Estado |
 |---|---|---|
-| [`produccion.md`](./produccion.md) | TODOs y decisiones para llevar la POC a producción | Borrador |
+| [`produccion.md`](./produccion.md) | TODOs y decisiones para llevar la POC a producción (incl. decisión de ambientes: local + prod, sin staging) | Borrador |
 | [`deploy.md`](./deploy.md) | Roadmap de deploy gratis (Oracle Always Free) para compartir con un cliente | Borrador |
 
 ## Convención
