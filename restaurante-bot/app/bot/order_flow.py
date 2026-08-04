@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import tempfile
+import unicodedata
 from datetime import datetime
 from typing import Literal
 
@@ -80,12 +81,26 @@ WELCOME_HINTS = (
     "✏️ Ya pediste y querés cambiar: \"agregame una coca\" o "
     "\"sáqueme el gallo pinto\""
 )
+# Modify-intent keywords. Built to match Costa Rican colloquial Spanish with
+# and without accents, and with attached pronouns (me/le/lo): "sáqueme el
+# gallo pinto", "agregame una coca", "cambie la milanesa", "quite la cebolla".
+# The regex intentionally covers verb roots so "saque", "saca", "cambie",
+# "cambia" and similar forms all trigger modification handling. Matching runs
+# against a de-accented copy of the text (see _without_accents).
 MODIFY_KEYWORDS = re.compile(
-    r"\b(agreg[aá]|agregame|agr[eé]gale|sac[aá]|s[aá]came|quita|quit[aá]|"
-    r"quitame|elimina|elimin[aá]|borra|borr[aá]|cambi[aá]|cambio|cambiar|"
-    r"modific[aá]|sin la|sin el|sin)\b",
+    r"\b(agreg\w*|sac\w*|saqu\w*|quit\w*|elimin\w*|borr\w*|cambi\w*|modific\w*|"
+    r"deja\w*|sin la|sin el|sin)\b",
     re.IGNORECASE,
 )
+
+
+def _without_accents(text: str) -> str:
+    """Strip Spanish diacritics so keyword matching is accent-insensitive."""
+    return "".join(
+        ch for ch in unicodedata.normalize("NFD", text) if unicodedata.category(ch) != "Mn"
+    )
+
+
 NAME_SKIP = {
     "omitir", "saltar", "skip", "ninguno", "ninguna", "no",
     "no gracias", "n", "n/a", "na", "-", "cliente",
@@ -463,7 +478,14 @@ async def handle_text(
         return
 
     has_pending_order = flow.parsed is not None and bool(flow.parsed.items)
-    if flow.step in ("awaiting_name", "awaiting_delivery", "awaiting_confirm"):
+    # Only treat as a modification when the text actually sounds like one.
+    # Otherwise a plain answer ("Ana", "delivery", "sí") would be parsed by the
+    # modification LLM and could accidentally remove items from the order.
+    if (
+        flow.step in ("awaiting_name", "awaiting_delivery", "awaiting_confirm")
+        and has_pending_order
+        and MODIFY_KEYWORDS.search(_without_accents(text))
+    ):
         logger.info("Order modification intent from user %s", user_id)
         await modify_order(update, context, user_id, chat_id, text)
         return
