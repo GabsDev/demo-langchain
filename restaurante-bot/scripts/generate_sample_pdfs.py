@@ -1,12 +1,13 @@
-"""Generate two sample restaurant menu PDFs (Argentine and Mexican) for testing.
+"""Generate three sample restaurant menu PDFs (Argentine, Mexican, Costa Rican) for testing.
 
 Run: python scripts/generate_sample_pdfs.py
 
 Writes:
     sample_menus/menu_argentino.pdf
     sample_menus/menu_mexicano.pdf
+    sample_menus/menu_costarricense.pdf
 
-Upload either PDF to the Telegram bot (or ingest it with scripts/ingest_pdf.py)
+Upload any PDF to the Telegram bot (or ingest it with scripts/ingest_pdf.py)
 to test the "replace the whole menu" feature.
 """
 from __future__ import annotations
@@ -107,6 +108,63 @@ MEXICAN_MENU = {
             [
                 ("Churros con chocolate", 2800, "Churros espolvoreados con azúcar y chocolate caliente."),
                 ("Flan mexicano", 2200, "Flan de huevo con caramelo."),
+            ],
+        ),
+    ],
+}
+
+
+COSTA_RICAN_MENU = {
+    "restaurant_name": "Soda La Tica",
+    "tagline": "Comida casera costarricense: casados, gallos y fresco natural.",
+    "sections": [
+        (
+            "Desayunos",
+            [
+                ("Gallo pinto", 2800, "Arroz y frijoles con natilla, queso y café chorreado."),
+                ("Gallo pinto con huevo", 3500, "Gallo pinto acompañado de huevo revuelto o frito."),
+                ("Chorreada", 2000, "Tortilla dulce de maíz tierno con natilla."),
+            ],
+        ),
+        (
+            "Casados",
+            [
+                ("Casado de pollo", 4500, "Arroz, frijoles, ensalada de repollo, plátano maduro y pollo."),
+                ("Casado de carne", 5000, "Arroz, frijoles, ensalada, plátano maduro y carne picada."),
+                ("Casado de pescado", 5500, "Arroz, frijoles, ensalada, plátano maduro y pescado al ajillo."),
+                ("Casado de cerdo", 5000, "Arroz, frijoles, ensalada, plátano maduro y cerdo en salsa."),
+            ],
+        ),
+        (
+            "Platos Típicos",
+            [
+                ("Chifrijo", 4800, "Chicharrones, frijoles molidos, pico de gallo y arroz con tortillas."),
+                ("Olla de carne", 6500, "Sopa de res con yuca, papa, elote, ayote y repollo."),
+                ("Sopa negra", 3800, "Sopa de frijol negro con huevo duro y culantro."),
+                ("Tamal de cerdo", 2200, "Masa de maíz rellena de cerdo, arroz y verduras, envuelto en hoja de plátano."),
+                ("Arreglado de queso", 1800, "Gallo de queso derretido con cebolla y culantro."),
+                ("Arreglado de carne", 2500, "Gallo de carne mechada con ensalada fresca."),
+                ("Empanada de papa", 1500, "Empanada de maíz rellena de papa con picadillo."),
+            ],
+        ),
+        (
+            "Bebidas",
+            [
+                ("Fresco de mora", 1200, "Fresco natural de mora, con leche o al agua."),
+                ("Fresco de tamarindo", 1200, "Fresco natural de tamarindo bien frío."),
+                ("Fresco de cas", 1200, "Fresco natural de cas, con leche o al agua."),
+                ("Horchata", 1500, "Bebida de arroz y canela."),
+                ("Café chorreado", 800, "Café de la zona, colado en bolsita."),
+                ("Gaseosa", 1200, "Refresco bien frío, 500 ml."),
+                ("Agua", 900, "Agua mineral con o sin gas."),
+            ],
+        ),
+        (
+            "Postres",
+            [
+                ("Arroz con leche", 1500, "Arroz con leche casero con canela."),
+                ("Tres leches", 2000, "Queque suave bañado en tres leches."),
+                ("Queque seco", 1200, "Queque seco de la casa, perfecto con café."),
             ],
         ),
     ],
@@ -215,6 +273,7 @@ def _build_pdf(
 def main() -> None:
     output_argentine = OUTPUT_DIR / "menu_argentino.pdf"
     output_mexican = OUTPUT_DIR / "menu_mexicano.pdf"
+    output_costarricense = OUTPUT_DIR / "menu_costarricense.pdf"
 
     _build_pdf(
         ARGENTINE_MENU["restaurant_name"],
@@ -228,8 +287,14 @@ def main() -> None:
         MEXICAN_MENU["sections"],
         output_mexican,
     )
+    _build_pdf(
+        COSTA_RICAN_MENU["restaurant_name"],
+        COSTA_RICAN_MENU["tagline"],
+        COSTA_RICAN_MENU["sections"],
+        output_costarricense,
+    )
 
-    for path in (output_argentine, output_mexican):
+    for path in (output_argentine, output_mexican, output_costarricense):
         size = path.stat().st_size
         print(f"Generated {path} ({size} bytes)")
     print(f"\nUpload one of these PDFs to the Telegram bot to test the menu replace feature.")
