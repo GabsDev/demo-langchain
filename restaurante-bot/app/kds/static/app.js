@@ -112,7 +112,7 @@ function connect() {
     } else if (msg.type === 'order.created') {
       orders.set(msg.order.id, msg.order);
       render();
-      beep();
+      newOrderChime();
     } else if (msg.type === 'order.updated') {
       orders.set(msg.order.id, msg.order);
       render();
@@ -280,18 +280,76 @@ function render() {
   countPreparingEl.textContent = `En preparación: ${preparing}`;
 }
 
-function beep() {
+// ---------------------------------------------------------------------------
+// New-order chime: two-tone bell (Uber Eats / PedidosYa style), with a
+// persistent mute toggle. Browsers only allow audio after a user gesture,
+// so the AudioContext is created lazily on the first click/keypress.
+// ---------------------------------------------------------------------------
+let audioCtx = null;
+let soundEnabled = localStorage.getItem('kds.sound.enabled') !== '0';
+
+const soundToggleEl = document.getElementById('sound-toggle');
+function updateSoundToggle() {
+  soundToggleEl.textContent = soundEnabled ? '🔊' : '🔇';
+  soundToggleEl.title = soundEnabled
+    ? 'Silenciar el sonido de pedidos nuevos'
+    : 'Activar el sonido de pedidos nuevos';
+}
+soundToggleEl.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('kds.sound.enabled', soundEnabled ? '1' : '0');
+  updateSoundToggle();
+});
+updateSoundToggle();
+
+function ensureAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    // Called from a user gesture (click/keypress), so this succeeds.
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+// Chrome/Edge unlock audio on the first user gesture anywhere in the page.
+document.addEventListener('click', ensureAudio, { once: true });
+document.addEventListener('keydown', ensureAudio, { once: true });
+
+function playTone(ctx, freq, start, duration, volume) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + duration + 0.05);
+}
+
+// "Ding-ding": two bell strikes (E6 then A5), each with a harmonic overtone
+// so it reads as a kitchen order alert instead of a plain beep. It repeats a
+// few times so the kitchen doesn't miss the order in a noisy environment.
+const CHIME_REPEATS = 3;
+const CHIME_REPEAT_GAP = 1.2; // seconds between repetitions
+
+function newOrderChime() {
+  if (!soundEnabled) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.6);
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime + 0.05;
+    for (let i = 0; i < CHIME_REPEATS; i++) {
+      const t = now + i * CHIME_REPEAT_GAP;
+      playTone(ctx, 1318.5, t, 0.35, 0.25);          // E6
+      playTone(ctx, 2637.0, t, 0.22, 0.08);          // harmonic
+      playTone(ctx, 880.0, t + 0.3, 0.5, 0.18);      // A5 body
+      playTone(ctx, 1760.0, t + 0.3, 0.3, 0.07);     // harmonic
+    }
   } catch (e) {
     // Audio is not available: ignore.
   }
