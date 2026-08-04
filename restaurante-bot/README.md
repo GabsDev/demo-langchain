@@ -306,3 +306,69 @@ banea el número y viola los TOS. Solo Cloud API oficial.
   el flujo normal.
 - **Sin pagos / historial de pedidos UI** — los pedidos se guardan pero no hay
   página de administración para pedidos pasados.
+
+## Deploy gratis: cómo compartir el bot con un cliente (roadmap)
+
+**Resumen:** para este bot, serverless (Vercel/Cloudflare) NO sirve. El bot
+tiene 4 bloqueadores de arquitectura que chocan con serverless:
+
+| Componente | Cómo funciona hoy | Problema en serverless |
+|---|---|---|
+| **Telegram** | Long-polling (proceso siempre vivo) | Vercel/CF congelan el proceso; solo webhook funciona |
+| **SQLite** (`data/menu.db`) | Archivo en disco | Filesystem efímero — se borra en cada deploy |
+| **ChromaDB** (`data/chroma/`) | Archivo en disco | Ídem: el índice RAG desaparece |
+| **WebSocket `/ws`** (KDS) | Conexión persistente | Vercel no lo soporta bien; CF necesita Durable Objects |
+
+**Conclusión:** el único hosting gratis que corre el bot SIN cambios es una VM
+siempre activa. Vercel Hobby además está limitado por ToS a proyectos
+personales (no backends).
+
+### Opciones free tier verificadas (2026)
+
+| Plataforma | ¿Sirve? | Detalles |
+|---|---|---|
+| **Oracle Cloud Always Free** | ✅ Recomendada | Gratis para SIEMPRE: 2 AMD micro VMs + hasta 4 ARM vCPUs / 24 GB RAM, ~200 GB disco persistente. Requiere tarjeta para verificar (sin cargo). Catch: capacidad ARM se agota en algunas regiones. |
+| **Render free tier** | ⚠️ Con asteriscos | Sin tarjeta, git push. Duerme a los 15 min (cold start 30–60s); disco efímero → pedidos e índice se pierden en cada redeploy. Bueno para demo corta. |
+| **Fly.io** | ❌ | Ya no tiene free tier real (solo trial 2h). |
+| **Railway** | ❌ | Solo trial 30 días ($5 crédito). |
+| **Vercel** | ❌ | ToS: solo proyectos personales; no para backends. |
+
+### Roadmap de deploy recomendado (todo gratuito)
+
+```
+PASO 0 — Seguridad ANTES de compartir (obligatorio)
+  [ ] Agregar auth básica HTTP al dashboard KDS (usuario + contraseña,
+      ~15 min con FastAPI). Sin esto, cualquiera con la URL puede
+      avanzar/borrar pedidos.
+  [ ] Proteger también los endpoints REST sensibles (/orders*).
+
+PASO 1 — Oracle Cloud Always Free (20 min)
+  [ ] Crear cuenta en cloud.oracle.com (tarjeta para verificar, sin cargo)
+  [ ] Crear una VM ARM (VM.Standard.A1.Flex) en una región con capacidad
+  [ ] Configurar SSH, firewall (abrir puerto 8000 o usar túnel)
+
+PASO 2 — Subir y correr el bot en la VM
+  [ ] git clone del repo en la VM
+  [ ] python -m venv .venv && pip install -r requirements.txt
+  [ ] Copiar .env con OPENAI_API_KEY y TELEGRAM_BOT_TOKEN
+  [ ] Crear servicio systemd para que el bot corra 24/7 y se reinicie solo
+      (Unit: restaurante-bot.service → ExecStart=.venv/bin/python run.py)
+
+PASO 3 — URL pública linda (HTTPS)
+  [ ] Cloudflare Tunnel gratuito (sin tarjeta) → https://demo-restaurante.com
+  [ ] Alternativa: ngrok para demo rápida (URL cambia en cada reinicio)
+
+PASO 4 — Compartir con el cliente
+  [ ] Mandar la URL del KDS + credenciales de auth al cliente
+  [ ] Mandar el link del bot de Telegram para que pruebe pedidos
+  [ ] Explicar: bot toma pedidos, KDS muestra los pedidos en vivo
+
+PASO 5 — Costos reales
+  [ ] Hosting: $0 (Oracle Always Free)
+  [ ] OpenAI API key: ~$1/mes a este volumen (RAG + LLM)
+  [ ] Dominio propio: opcional (~$10/año) o usar subdominio de tunel gratis
+```
+
+**Nota:** la alternativa serverless (migrar a webhook + Postgres + vector DB
+externa + SSE/Durable Objects) es viable pero son semanas de rework para un POC
+— no vale la pena salvo que el cliente pida escalar de verdad.
