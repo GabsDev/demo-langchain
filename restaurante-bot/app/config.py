@@ -27,6 +27,9 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
+KDS_USER = os.getenv("KDS_USER", "admin")
+KDS_PASS = os.getenv("KDS_PASS", "")
+
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8000"))
 
@@ -52,6 +55,15 @@ def require_openai_key() -> str:
 def has_telegram_token() -> bool:
     """True when a Telegram bot token is present in the environment."""
     return bool(TELEGRAM_BOT_TOKEN)
+
+
+def has_kds_auth() -> bool:
+    """True when KDS Basic Auth credentials are configured.
+
+    An empty `KDS_PASS` disables auth entirely so local development keeps
+    working without a login prompt.
+    """
+    return bool(KDS_USER and KDS_PASS)
 
 
 def redact(value: str) -> str:
@@ -90,6 +102,6 @@ def log_settings() -> None:
         OPENAI_MODEL, EMBEDDING_MODEL, HOST, PORT,
     )
     logger.info(
-        "Secrets configured: openai_key=%s telegram_token=%s",
-        has_openai_key(), has_telegram_token(),
+        "Secrets configured: openai_key=%s telegram_token=%s kds_auth=%s",
+        has_openai_key(), has_telegram_token(), has_kds_auth(),
     )

@@ -32,6 +32,13 @@ body {
 }
 
 .brand { font-size: 22px; font-weight: 800; }
+.auth-banner {
+  background: var(--red);
+  color: #fff;
+  text-align: center;
+  padding: 12px 16px;
+  font-weight: 700;
+}
 .clock { font-size: 20px; font-weight: 700; color: var(--muted); }
 .counts { display: flex; gap: 12px; }
 .sound-toggle {

@@ -97,12 +97,60 @@ menuRefreshBtn.addEventListener('click', refreshMenuAndIndex);
 
 // ---------------------------------------------------------------------------
 // Live orders (WebSocket) — unchanged behavior, blink driven by CSS/status.
+// The socket is authorized with a short-lived token from GET /ws-token, so the
+// dashboard keeps working even after HTTP Basic Auth logs the user in.
 // ---------------------------------------------------------------------------
-function connect() {
+let wsToken = null;
+
+function showAuthBanner(message) {
+  const banner = document.getElementById('auth-banner');
+  banner.textContent = message;
+  banner.classList.remove('hidden');
+}
+
+function reloadSoon(message) {
+  showAuthBanner(message);
+  setTimeout(() => window.location.reload(), 1500);
+}
+
+async function fetchWsToken() {
+  const res = await fetch('/ws-token');
+  if (res.status === 401) {
+    // The browser has not authenticated this origin yet. A reload triggers the
+    // built-in Basic Auth prompt because the server responds with
+    // WWW-Authenticate on every protected request.
+    reloadSoon('Autenticación requerida. Iniciá sesión para ver el dashboard.');
+    return null;
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.token;
+}
+
+async function connect() {
+  if (!wsToken) {
+    try {
+      wsToken = await fetchWsToken();
+    } catch (e) {
+      console.error('No se pudo obtener el token del WebSocket:', e);
+      setTimeout(connect, 2000);
+      return;
+    }
+    if (!wsToken) return;
+  }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws = new WebSocket(
+    `${proto}://${location.host}/ws?token=${encodeURIComponent(wsToken)}`
+  );
   ws.onopen = () => console.log('KDS conectado al servidor');
-  ws.onclose = () => setTimeout(connect, 2000);
+  ws.onclose = (event) => {
+    if (event.code === 4401) {
+      // Token rejected/expired by the server: fetch a fresh one on reload.
+      reloadSoon('Sesión expirada, recargá la página');
+      return;
+    }
+    setTimeout(connect, 2000);
+  };
   ws.onerror = () => ws.close();
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);

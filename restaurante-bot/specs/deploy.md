@@ -34,16 +34,19 @@ bloqueadores de arquitectura chocan con serverless:
 
 ---
 
-## 1. TODO — Autenticación en el dashboard KDS (PRIORIDAD ALTA, PREREQUISITO)
+## 1. ✅ Autenticación en el dashboard KDS (IMPLEMENTADO)
 
-> Ya documentado en `produccion.md` §2. Es el PASO 0 del deploy: NO compartir
-> la URL pública sin esto.
+> Prerequisito del deploy cumplido: el dashboard ya no está abierto al público.
 
-- Agregar HTTP Basic Auth (usuario + contraseña) a `/`, `/orders`, `/menu` y
-  `/ws` (WebSocket: validar token en el handshake).
-- Detrás de HTTPS/reverse proxy en producción (Cloudflare Tunnel provee TLS).
-- Credenciales por variable de entorno (`KDS_USER` / `KDS_PASS`), nunca
-  hardcodeadas; respetar la convención de `config.redact()` en logs.
+- ✅ HTTP Basic Auth (`KDS_USER`/`KDS_PASS`) en `/`, `/orders`, `/menu` y
+  `/ws-token` vía middleware; `/health` queda abierto para monitoreo.
+- ✅ WebSocket `/ws` valida un token corto en el handshake (`GET /ws-token`,
+  TTL 15 min, reusable, cerrado con código 4401 si es inválido).
+- ✅ Credenciales por variable de entorno, nunca hardcodeadas; logs solo como
+  booleanos (`has_kds_auth`), respetando `config.redact()`.
+- ⏳ Pendiente para producción: HTTPS/reverse proxy (Cloudflare Tunnel provee
+  TLS; ver §4). El Basic Auth viaja sin cifrar sobre HTTP, suficiente para la
+  demo con túnel, no para tráfico de producción sin TLS.
 
 **Archivos afectados:** `app/server.py` (middleware/guard de rutas),
 `app/kds/ws.py` (handshake), `app/config.py` (nuevas variables), `app/kds/static`

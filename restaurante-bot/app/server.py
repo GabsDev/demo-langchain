@@ -4,13 +4,15 @@ Boots without an API key: dashboard, SQLite, health and WebSocket all work.
 """
 from __future__ import annotations
 
+import base64
 import logging
 import os
+import secrets
 import tempfile
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
@@ -29,6 +31,13 @@ logger = logging.getLogger(__name__)
 # In-memory by design (POC); lost on restart. Matches the bot's module-level
 # _pending_menu_replace pattern.
 _pending_menu_upload: dict[str, str] = {}
+
+# token -> issue time of a WebSocket handshake token for the dashboard.
+# In-memory by design (POC); lost on restart. Reusable within its TTL so the
+# dashboard can reconnect without refetching a token.
+_ws_tokens: dict[str, datetime] = {}
+_WS_TOKEN_TTL = timedelta(minutes=15)
+_KDS_REALM = "KDS"
 
 
 @asynccontextmanager
@@ -63,6 +72,47 @@ async def _log_requests(request, call_next):
         request.method, request.url.path, response.status_code, duration_ms,
     )
     return response
+
+
+def _kds_authorized(request) -> bool:
+    """Validate HTTP Basic credentials for the KDS dashboard.
+
+    Returns True immediately when auth is disabled (no KDS_PASS configured) so
+    local development is untouched. Uses constant-time comparison and never
+    exposes the attempted password.
+    """
+    if not config.has_kds_auth():
+        return True
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Basic "):
+        return False
+    try:
+        decoded = base64.b64decode(header[6:]).decode("utf-8")
+        username, _, password = decoded.partition(":")
+    except Exception:
+        return False
+    return secrets.compare_digest(username, config.KDS_USER) and secrets.compare_digest(
+        password, config.KDS_PASS
+    )
+
+
+@app.middleware("http")
+async def _basic_auth(request, call_next):
+    """Enforce HTTP Basic Auth on every route except `/health`.
+
+    Monitoring (uptime checks) stays open via `/health`; everything else
+    requires valid credentials once KDS_PASS is configured. Failed attempts are
+    logged without the password.
+    """
+    if request.url.path != "/health" and not _kds_authorized(request):
+        client = request.client.host if request.client else "unknown"
+        logger.warning("Basic auth rejected for %s from %s", request.url.path, client)
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required"},
+            headers={"WWW-Authenticate": f'Basic realm="{_KDS_REALM}"'},
+        )
+    return await call_next(request)
 
 
 @app.get("/")
@@ -556,10 +606,44 @@ async def change_status(order_id: int, payload: StatusUpdate) -> dict:
     return order.to_dict()
 
 
+def _prune_ws_tokens() -> None:
+    """Drop expired WebSocket tokens (lazy; runs on each /ws-token issue)."""
+    now = datetime.now()
+    expired = [
+        token for token, issued in _ws_tokens.items() if now - issued > _WS_TOKEN_TTL
+    ]
+    for token in expired:
+        _ws_tokens.pop(token, None)
+        logger.debug("Pruned expired WebSocket token %s", token)
+
+
+@app.get("/ws-token")
+def ws_token() -> dict:
+    """Issue a short-lived WebSocket handshake token for the dashboard."""
+    _prune_ws_tokens()
+    token = secrets.token_urlsafe(24)
+    _ws_tokens[token] = datetime.now()
+    logger.info(
+        "WebSocket token issued (valid %d min)",
+        int(_WS_TOKEN_TTL.total_seconds() / 60),
+    )
+    return {"token": token, "expires_in": int(_WS_TOKEN_TTL.total_seconds())}
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(socket: WebSocket) -> None:
     """Real-time channel: pushes init/order.created/order.updated events and
     accepts `status.change` messages from the dashboard."""
+    if config.has_kds_auth():
+        token = socket.query_params.get("token")
+        issued = _ws_tokens.get(token) if token else None
+        if issued is None or datetime.now() - issued > _WS_TOKEN_TTL:
+            client = socket.client.host if socket.client else "unknown"
+            logger.warning(
+                "WebSocket rejected from %s: missing, invalid or expired token", client
+            )
+            await socket.close(code=4401)
+            return
     await ws.manager.connect(socket)
     client = socket.client.host if socket.client else "unknown"
     logger.info("WebSocket connected from %s", client)
