@@ -54,6 +54,12 @@
 - Descripción: Agua mineral con o sin gas.
 - Tags: agua, bebida
 
+### Coca Cola
+
+- Precio: ₡1,500
+- Descripción: Gaseosa
+- Tags: gaseosa, bebida
+
 ## Postres
 
 ### Flan con dulce de leche
